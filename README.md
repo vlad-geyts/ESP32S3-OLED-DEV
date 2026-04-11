@@ -13,6 +13,7 @@ Here is the architectural reasoning for this decision:
 To implement this professionally, we should use a Thread-Safe Queue. Instead of calling `tft.print()` from various tasks (which would cause a race condition on the SPI bus), other tasks will "post" messages to a queue, and a dedicated `displayTask` will render them.
 
 1. **The Queue & Task Setup**
+```
         // Global queue handle
         QueueHandle_t displayQueue;
 
@@ -27,10 +28,12 @@ To implement this professionally, we should use a Thread-Safe Queue. Instead of 
         // In setup()
         displayQueue = xQueueCreate(10, sizeof(DisplayMsg));
         xTaskCreatePinnedToCore(displayTask, "OLED_Task", 4096, NULL, 1, NULL, 0); // Priority 1, Core 0
+```
 
 2. **The Display Logic (Core 0)**
 Using a queue allows the display to act as a non-blocking terminal.
 
+```
     void displayTask(void* pvParameters) {
         // Initialize SPI and TFT here to keep ownership on Core 0
         SPI.begin(Config::OLED_SCLK, -1, Config::OLED_MOSI, Config::OLED_CS);
@@ -51,10 +54,11 @@ Using a queue allows the display to act as a non-blocking terminal.
             }
         }
     }
+```
 
 3. **Professional Macro for Logging**
 You can then create a simple helper to send logs to both Serial and OLED:
-
+```
     void logStatus(const char* info, uint16_t color = 0xFFFF) {
         Serial.println(info);
         DisplayMsg msg;
@@ -62,6 +66,7 @@ You can then create a simple helper to send logs to both Serial and OLED:
         msg.color = color;
         xQueueSend(displayQueue, &msg, 0); 
     }
+```
 
 **Note on the Waveshare Schematic**
 Looking at the DevKit views you provided, ensure your OLED RST pin is actually connected to a GPIO and not just tied to the ESP32's global EN/Reset line. While tying them together works for simple boot-ups, having software control over the OLED Reset pin (GPIO 14 in our plan) is vital for recovering the display controller if a brown-out or ESD event hangs the SSD1351.
