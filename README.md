@@ -15,7 +15,7 @@ To implement this professionally, we should use a Thread-Safe Queue. Instead of 
 1. **The Queue & Task Setup**
 ```
         // Global queue handle
-        QueueHandle_t displayQueue;
+        QueueHandle_t displayQueue;    
 
         struct DisplayMsg {
             char text[32];
