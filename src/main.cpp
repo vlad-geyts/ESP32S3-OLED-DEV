@@ -36,7 +36,15 @@ namespace Config {
 // Global Objects
 Preferences prefs;
 SemaphoreHandle_t panicSemaphore;
+QueueHandle_t displayQueue;
 Adafruit_SSD1351 tft = Adafruit_SSD1351(Config::ScreenWidth, Config::ScreenHeight, &SPI, Config::OLED_CS, Config::OLED_DC, Config::OLED_RST);
+
+int LineNumber = 0;
+
+struct DisplayMsg {
+    char text[32];
+    uint16_t color;
+};
 
 // Function Prototypes
 void IRAM_ATTR handleButtonInterrupt();
@@ -46,6 +54,8 @@ void initOLED();
 void espInfo();
 void gpioConfig();
 void rdPanicCounter();
+void displayTask(void* pvParameters);
+void logStatus(const char* info, uint16_t color = 0xFFFF);
 
 void setup() {
     // Delay to warm up 
@@ -70,20 +80,24 @@ void setup() {
     prefs.begin("system", true); // Open in Read-Only mode
     Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
     prefs.end();
+  
+    // Create a Queue for Display
+    displayQueue = xQueueCreate(10, sizeof(DisplayMsg));
 
-    Serial.println("\n--- Phase 3: ISR & Semaphores ---");
-
-    // 1. Create the Binary Semaphore
+    // Create the Binary Semaphore for ISR
     panicSemaphore = xSemaphoreCreateBinary();
 
-    // 2. Attach Interrupt to (BtnPanic)
+    // Attach Interrupt to (BtnPanic)
     attachInterrupt(digitalPinToInterrupt(Config::BtnPanic), handleButtonInterrupt, FALLING);
 
-    // 4. Panic Handler Task (Highest Priority: 3) on Core 1
+    // Panic Handler Task (Highest Priority: 3) on Core 1
     xTaskCreatePinnedToCore(panicTask, "Panic", 4096, NULL, 3, NULL, 1);
 
-    // 5. Standard Heartbeat (Priority: 1) on Core 0
-    xTaskCreatePinnedToCore(heartbeatTask, "Heartbeat", 4096, NULL, 1, NULL, 0);
+    // Standard Heartbeat (Priority: 0) on Core 0
+    xTaskCreatePinnedToCore(heartbeatTask, "Heartbeat", 4096, NULL, 0, NULL, 0);
+
+    // Create Display Task (Priority: 1) on Core 0
+    xTaskCreatePinnedToCore(displayTask, "OLED_Task", 4096, NULL, 1, NULL, 0); 
 }
 
 void loop() {
@@ -205,6 +219,14 @@ void rdPanicCounter() {
     prefs.end();
 }
 
+ void logStatus(const char* info, uint16_t color = 0xFFFF) {
+    Serial.println(info);
+     DisplayMsg msg;
+    strncpy(msg.text, info, sizeof(msg.text));
+    msg.color = color;
+    xQueueSend(displayQueue, &msg, 0); 
+}
+
 // --- Tasks ---
 void panicTask(void *pvParameters) {
     for(;;) {
@@ -234,6 +256,20 @@ void panicTask(void *pvParameters) {
         }
     }
 }
+
+    void displayTask(void* pvParameters) {
+        DisplayMsg msg;
+        if (xQueueReceive(displayQueue, &msg, portMAX_DELAY) == pdPASS) {
+            if(LineNumber > 10) { 
+                tft.fillScreen(0x0000); 
+                LineNumber = 0; 
+            }
+                tft.setCursor(0, LineNumber * 12);
+                tft.setTextColor(msg.color);
+                tft.println(msg.text);
+                LineNumber++;
+        }
+    }
 
 void heartbeatTask(void *pvParameters) {
      for(;;) {
