@@ -139,7 +139,7 @@ void initOLED() {
     tft.setCursor(LineNumber, 5);
     tft.setTextColor(0x07FF); // Cyan color to match your Web UI
     tft.print("S3 MONITOR ACTIVE"); 
-    LineNumber++;  
+      
 
     //  Small size 5x7 [6x8]
     //tft.setTextSize(1);
@@ -221,14 +221,18 @@ void rdPanicCounter() {
 }
 
  void logStatus(const char* info, uint16_t color = 0xFFFF) {
+    //Serial.println(info);
+    
     DisplayMsg msg;
-
-    // copies the string into the fixed-size buffer, preventing stack/heap corruption
-    strncpy(msg.text, info, sizeof(msg.text));
+    // Safe string copy with guaranteed null-termination
+    strncpy(msg.text, info, sizeof(msg.text) - 1);
+    msg.text[sizeof(msg.text) - 1] = '\0';  // Adding null-termination
     msg.color = color;
-
-    // Send populated msg struct to a FreeRTOS queue (displayQueue)
-    xQueueSend(displayQueue, &msg, 0); 
+    
+    // Block briefly if queue is full (10ms max), drop otherwise
+    if (xQueueSend(displayQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS) {
+        Serial.println(F("[WARN] Display queue full, message dropped"));
+    }
 }
 
 // --- Tasks ---
