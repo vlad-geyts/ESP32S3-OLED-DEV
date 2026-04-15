@@ -81,8 +81,8 @@ void setup() {
     Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
     prefs.end();
   
-    // Create a Queue for Display
-    displayQueue = xQueueCreate(10, sizeof(DisplayMsg));
+    // Create a Queue for Display only 1 Msg
+    displayQueue = xQueueCreate(1, sizeof(DisplayMsg));
 
     // Create the Binary Semaphore for ISR
     panicSemaphore = xSemaphoreCreateBinary();
@@ -265,19 +265,30 @@ void panicTask(void *pvParameters) {
     }
 }
 
-    void displayTask(void* pvParameters) {
-        DisplayMsg msg;
+void displayTask(void* pvParameters) {
+    DisplayMsg msg;
+    while (true) {
         if (xQueueReceive(displayQueue, &msg, portMAX_DELAY) == pdPASS) {
+            // xQueueReceive(...): The FreeRTOS API function that attempts to read and remove an item from a queue.
+            // displayQueue: The handle to the queue being read.
+            // &msg: A pointer to the buffer where the received data will be copied
+            // portMAX_DELAY: The timeout value. Because this is set, the task will block (enter the Blocked state) and wait forever for data to become available
+            // Alternatives: If you want to check the queue and continue without waiting, use a timeout of 0 (polling) instead of portMAX_DELAY
+            // == pdPASS: The check to confirm that data was received successfully (it returns pdTRUE/pdPASS if data was received, otherwise errQUEUE_EMPTY if a timeout occurred). 
             if(LineNumber > 10) { 
                 tft.fillScreen(0x0000); 
                 LineNumber = 0; 
             }
-                tft.setCursor(0, LineNumber * 12);
-                tft.setTextColor(msg.color);
-                tft.println(msg.text);
-                LineNumber++;
+            tft.setCursor(0, LineNumber * 12);
+            tft.setTextColor(msg.color);
+            tft.println(msg.text);
+            LineNumber++;
+
+            // Optional: prevent I2C/SPI bus saturation
+            vTaskDelay(pdMS_TO_TICKS(5)); 
         }
-    }
+    }    
+}
 
 void heartbeatTask(void *pvParameters) {
      for(;;) {

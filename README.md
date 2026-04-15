@@ -12,6 +12,11 @@ Here is the architectural reasoning for this decision:
 **Software Implementation: The "OLED Terminal"**
 To implement this professionally, we should use a Thread-Safe Queue. Instead of calling `tft.print()` from various tasks (which would cause a race condition on the SPI bus), other tasks will "post" messages to a queue, and a dedicated `displayTask` will render them.
 
+**How the OLED Part Actually Works**
+This function does not draw to the OLED directly. Instead, it follows a decoupled architecture:
+    Producer: `logStatus()` packages the message and pushes it into `displayQueue`.
+    Consumer: A separate FreeRTOS task (e.g., `vDisplayTask()`) runs in the background:
+
 1. **The Queue & Task Setup**
 ```
         // Global queue handle
@@ -70,6 +75,43 @@ You can then create a simple helper to send logs to both Serial and OLED:
 
 **Note on the Waveshare Schematic**
 Looking at the DevKit views you provided, ensure your OLED RST pin is actually connected to a GPIO and not just tied to the ESP32's global EN/Reset line. While tying them together works for simple boot-ups, having software control over the OLED Reset pin (GPIO 14 in our plan) is vital for recovering the display controller if a brown-out or ESD event hangs the SSD1351.
+
+# Qwen propousal:
+
+🧠 Task Blocking vs. CPU Blocking
+In FreeRTOS, blocking a task ≠ blocking the CPU.
+When xQueueReceive(displayQueue, &msg, portMAX_DELAY) is called and the queue is empty:
+
+    ✅ The task transitions from Running → Blocked
+    ✅ The FreeRTOS scheduler immediately context-switches to the next highest-priority ready task (Wi-Fi, UI, sensors, etc.)
+    ✅ If no tasks are ready, the scheduler runs the Idle task, which can optionally put the CPU/core into a low-power sleep state
+    ✅ Your CPU continues executing other work (or sleeps efficiently). 0% CPU is wasted by the display task.
+
+This is the core design of preemptive RTOS: tasks block on events, the scheduler handles CPU allocation automatically.
+
+```
+void vDisplayTask(void* pvParameters) {
+    DisplayMsg msg;
+    while (true) {
+        // Suspends task, yields CPU to Wi-Fi/UI/other tasks
+        if (xQueueReceive(displayQueue, &msg, portMAX_DELAY) == pdPASS) {
+            drawOLED(msg.text, msg.color);
+            // Optional: prevent I2C/SPI bus saturation
+            vTaskDelay(pdMS_TO_TICKS(5)); 
+        }
+    }
+}
+```
+
+**This gives you:**
+
+    ⚡ Instant response when a log arrives
+    🔋 Near-zero idle CPU usage
+    🌐 No interference with Core 0 networking/UI tasks
+    🛡️ Clean, maintainable RTOS code
+
+
+
 
 >Since you're planning for E-paper in the final product, would you like to implement a "Page" system for the OLED now, so you can toggle between a Log view and a Signal Strength view?
 
