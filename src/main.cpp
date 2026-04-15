@@ -55,7 +55,7 @@ void espInfo();
 void gpioConfig();
 void rdPanicCounter();
 void displayTask(void* pvParameters);
-void logStatus(const char* info, uint16_t color = 0xFFFF);
+void logStatus(const char*, uint16_t);
 
 void setup() {
     // Delay to warm up 
@@ -109,9 +109,6 @@ void loop() {
 // IRAM_ATTR ensures this runs from RAM, critical for S3 stability
 void IRAM_ATTR handleButtonInterrupt() {
 
-    // Set GPIO 0 high to indicate that we are jumped into ISR
-    digitalWrite(Config::StrobPin, HIGH);
-
     static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     // Notify the task that the button was pressed
     xSemaphoreGiveFromISR(panicSemaphore, &xHigherPriorityTaskWoken);
@@ -134,11 +131,13 @@ void initOLED() {
     //tft.setTextColor(0xffc0); // Sets text colour to Yellow
     
     // Initialize OLED display
-    tft.begin(20000000); // Force 20MHz
+    tft.begin(1000000); // Force 1MHz 20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
     tft.setCursor(LineNumber, 5);
     tft.setTextColor(0x07FF); // Cyan color to match your Web UI
+digitalWrite(Config::StrobPin, HIGH);     
     tft.print("S3 MONITOR ACTIVE"); 
+digitalWrite(Config::StrobPin, LOW);    
       
 
     //  Small size 5x7 [6x8]
