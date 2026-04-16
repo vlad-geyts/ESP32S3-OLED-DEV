@@ -98,6 +98,8 @@ void setup() {
 
     // Create Display Task (Priority: 1) on Core 0
     xTaskCreatePinnedToCore(displayTask, "OLED_Task", 4096, NULL, 1, NULL, 0); 
+
+    logStatus("Setup() Completed...", 0x07FF);
 }
 
 void loop() {
@@ -124,6 +126,7 @@ void IRAM_ATTR handleButtonInterrupt() {
 void initOLED() {
     // Initialize SPI with our custom pins
     SPI.begin(Config::OLED_SCLK, -1, Config::OLED_MOSI, Config::OLED_CS);
+    LineNumber = 0;
 
     //tft.setTextColor(0xffff); // Sets text colour to White
     //tft.setTextColor(0x07FF); // Sets text clour to Cyan
@@ -131,13 +134,14 @@ void initOLED() {
     //tft.setTextColor(0xffc0); // Sets text colour to Yellow
     
     // Initialize OLED display
-    tft.begin(1000000); // Force 1MHz 20MHz is max)
+    tft.begin(20000000); // Force 20MHz 20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
-    tft.setCursor(LineNumber, 5);
-    tft.setTextColor(0x07FF); // Cyan color to match your Web UI
+    tft.setCursor(15, LineNumber);
+    tft.setTextColor(0xff40); // Yellow color
 digitalWrite(Config::StrobPin, HIGH);     
     tft.print("S3 MONITOR ACTIVE"); 
 digitalWrite(Config::StrobPin, LOW);    
+    LineNumber++;
       
 
     //  Small size 5x7 [6x8]
