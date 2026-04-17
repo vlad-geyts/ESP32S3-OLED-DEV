@@ -137,10 +137,8 @@ void initOLED() {
     tft.begin(20000000); // Force 20MHz 20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
     tft.setCursor(15, LineNumber);
-    tft.setTextColor(0xff40); // Yellow color
-digitalWrite(Config::StrobPin, HIGH);     
-    tft.print("S3 MONITOR ACTIVE"); 
-digitalWrite(Config::StrobPin, LOW);    
+    tft.setTextColor(0xff40); // Yellow color   
+    tft.print("S3 MONITOR ACTIVE");    
     LineNumber++;
       
 
@@ -295,8 +293,10 @@ void displayTask(void* pvParameters) {
 
 void heartbeatTask(void *pvParameters) {
      for(;;) {
+digitalWrite(Config::StrobPin, HIGH);  
         digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
  //       Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis()/1000);
         vTaskDelay(pdMS_TO_TICKS(1000));
+digitalWrite(Config::StrobPin, LOW);  
     }
 }
