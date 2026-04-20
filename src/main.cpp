@@ -6,9 +6,15 @@
                           // Does not created a copy in memory. Read-only.
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1351.h>
+#include <Adafruit_NeoPixel.h>
 #include <SPI.h>
 #include "unused_gpio.h"
 
+// WS2812 Configuration
+#define WS2812_PIN      48
+#define NUM_LEDS        1
+#define LED_BRIGHTNESS  8  // 0-255 (adjust to your preference)
+#define LED_TYPE        (NEO_GRB + NEO_KHZ800)
 
 //C++: Namespaces & Constexpr --- 
 namespace Config {
@@ -16,7 +22,7 @@ namespace Config {
     // It is more efficient than 'const' and safer than '#define'.
 
     constexpr int BtnPanic = 47;
-    constexpr int LedPin    = 2;
+    //constexpr int LedPin    = 2;
     constexpr int StrobPin  = 21;
 
     // HMI Navigation Buttons
@@ -33,6 +39,8 @@ namespace Config {
 
     constexpr int ScreenWidth  = 128;
     constexpr int ScreenHeight = 128;
+    
+    constexpr int LedPin = WS2812_PIN;
 }
 
 // Global Objects
@@ -40,6 +48,7 @@ Preferences prefs;
 SemaphoreHandle_t panicSemaphore;
 QueueHandle_t displayQueue;
 Adafruit_SSD1351 tft = Adafruit_SSD1351(Config::ScreenWidth, Config::ScreenHeight, &SPI, Config::OLED_CS, Config::OLED_DC, Config::OLED_RST);
+Adafruit_NeoPixel ws2812(NUM_LEDS, WS2812_PIN, LED_TYPE);
 
 int LineNumber = 0;
 //char MsgBuf[30];        // ! only 21 characters per line can be displayed on OLED
@@ -258,12 +267,37 @@ void displayTask(void* pvParameters) {
         }
     }    
 }
+//based on inboard BLU LED connected to GPIO 2
+//void heartbeatTask(void *pvParameters) {
+//     for(;;) { 
+//        digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
+//        Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis()/1000);
+//        vTaskDelay(pdMS_TO_TICKS(1000)); 
+//    }
+//}
 
 void heartbeatTask(void *pvParameters) {
-     for(;;) { 
-        digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
-        Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis()/1000);
-        vTaskDelay(pdMS_TO_TICKS(1000)); 
+    bool ledOn = false;
+
+    // Initialize LED to OFF state
+    ws2812.setBrightness(LED_BRIGHTNESS);
+    ws2812.setPixelColor(0, 0, 0, 0);
+    ws2812.show();
+
+    for (;;) {
+        if (ledOn) {
+            //ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Heartbeat ON (e.g., cyan/blue)
+            ws2812.setPixelColor(0, ws2812.Color(0, 255, 0));  // Heartbeat ON (e.g., green)   
+        } else {
+            // Heartbeat OFF
+            ws2812.setPixelColor(0, 0, 0, 0);
+        }
+        
+        ws2812.show();          // Push data to the LED
+        ledOn = !ledOn;         // Toggle state
+
+    //    Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis() / 1000);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
 
