@@ -17,7 +17,7 @@ namespace Config {
 
     constexpr int BtnPanic = 47;
     constexpr int LedPin    = 2;
-    constexpr int StrobPin  = 48;
+    constexpr int StrobPin  = 21;
 
     // HMI Navigation Buttons
     constexpr int BtnUp    = 4;
@@ -260,11 +260,10 @@ void displayTask(void* pvParameters) {
 }
 
 void heartbeatTask(void *pvParameters) {
-     for(;;) {
-digitalWrite(Config::StrobPin, HIGH);  
+     for(;;) { 
         digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
- //       Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis()/1000);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-digitalWrite(Config::StrobPin, LOW);  
+        Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis()/1000);
+        vTaskDelay(pdMS_TO_TICKS(1000)); 
     }
 }
+
