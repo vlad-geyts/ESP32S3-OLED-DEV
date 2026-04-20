@@ -143,7 +143,7 @@ void initOLED() {
     //tft.setTextColor(0xffc0); // Sets text colour to Yellow
     
     // Initialize OLED display
-    tft.begin(10000000); // Force SPI clik=10MHz;  20MHz is max)
+    tft.begin(20000000); // Force SPI clik=20MHz;  20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
     tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
     //  Small size 5x7 [6x8] (21 charaters per line)
@@ -229,10 +229,23 @@ void panicTask(void *pvParameters) {
 
             Serial.printf("\n[Panic] Event #%u recorded in NVS!\n", count);
 
+            bool ledOn = false;
             // Your strobe feedback logic...
             for(int i = 0; i < 20; i++) {
-                digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
-                vTaskDelay(pdMS_TO_TICKS(50));
+//                digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
+
+            if (ledOn) {
+                ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Panic (Cyan/Blue)
+                ws2812.setPixelColor(0, ws2812.Color(255, 0, 0));  // Panic (Red)
+             } else {
+                // Heartbeat OFF
+                ws2812.setPixelColor(0, 0, 0, 0);
+             }
+        
+            ws2812.show();          // Push data to the LED
+            ledOn = !ledOn;         // Toggle state
+
+            vTaskDelay(pdMS_TO_TICKS(50));
             }
 
             digitalWrite(45, LOW);
