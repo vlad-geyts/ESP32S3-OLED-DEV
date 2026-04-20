@@ -40,6 +40,7 @@ QueueHandle_t displayQueue;
 Adafruit_SSD1351 tft = Adafruit_SSD1351(Config::ScreenWidth, Config::ScreenHeight, &SPI, Config::OLED_CS, Config::OLED_DC, Config::OLED_RST);
 
 int LineNumber = 0;
+//char MsgBuf[30];        // ! only 21 characters per line can be displayed on OLED
 
 struct DisplayMsg {
     char text[32];
@@ -74,12 +75,6 @@ void setup() {
 
     // Reading "Panic Count" on start up
     rdPanicCounter();
-
-
-    // Reading "Panic Count" on start up
-    prefs.begin("system", true); // Open in Read-Only mode
-    Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
-    prefs.end();
   
     // Create a Queue for Display only 1 Msg
     displayQueue = xQueueCreate(1, sizeof(DisplayMsg));
@@ -215,9 +210,14 @@ void gpioConfig() {
 }
 
 void rdPanicCounter() {
-  // Reading "Panic Count" on start up
+  // Reading "Panic Count" and send value to terminal
     prefs.begin("system", true); // Open in Read-Only mode
     Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
+    // convert message to string
+    // sprintf(MsgBuf, "FS: %u B", ESP.getFlashChipSize());
+    // logStatus(MsgBuf, 0x07FF);
+    // logStatus("FS: B", 0x07FF);
+    // prefs.end();
     prefs.end();
 }
 
