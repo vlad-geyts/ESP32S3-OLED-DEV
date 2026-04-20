@@ -7,6 +7,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1351.h>
 #include <SPI.h>
+#include "unused_gpio.h"
+
 
 //C++: Namespaces & Constexpr --- 
 namespace Config {
@@ -63,6 +65,9 @@ void setup() {
     delay(1000);
     Serial.begin(115200);
     delay(1000);
+
+    //Terminate unused GPIOs EARLY (before peripheral init)
+    ConfigureUnusedGpios();
 
     // Configure Hardware using our Namespace
     gpioConfig();
@@ -129,52 +134,15 @@ void initOLED() {
     //tft.setTextColor(0xffc0); // Sets text colour to Yellow
     
     // Initialize OLED display
-    tft.begin(20000000); // Force 20MHz 20MHz is max)
+    tft.begin(10000000); // Force SPI clik=10MHz;  20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
+    tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
+    //  Small size 5x7 [6x8] (21 charaters per line)
+    //  Medium size 10x14 [12x16] (10 charters per line)
     tft.setCursor(15, LineNumber);
     tft.setTextColor(0xff40); // Yellow color   
     tft.print("S3 MONITOR ACTIVE");    
     LineNumber++;
-      
-
-    //  Small size 5x7 [6x8]
-    //tft.setTextSize(1);
-    //tft.setCursor(32, 0);
-    //tft.setTextColor(0x07FF); // Sets text clour to Cyan
-    //tft.setTextColor(0x07e1); // Sets text colour to Green
-    //tft.setTextColor(0xffff); // Sets text colour to White
-    //tft.print("SMALL SIZE");
-
-    //  Small size (21 charaters per line)
-    //tft.setTextSize(1);
-    //tft.setCursor(0, 8);
-    //tft.setTextColor(0xff40); // Sets text colour to Yellow
-    //tft.print("012345678901234567890");
-
-     //  Medium size 10x14 [12x16]
-    //tft.setTextSize(2);
-    //tft.setCursor(24, 24);
-    //tft.setTextColor(0x07e1); // Sets text colour to Green
-    //tft.print("MEDIUM");
-
-    //  Medium size (10 charters per line)
-    //tft.setTextSize(2);
-    //tft.setCursor(0, 40);
-    //tft.setTextColor(0xffc0); // Sets text colour to Yellow
-    //tft.setTextColor(0x07FF); // Sets text clour to Cyan
-    //tft.print("0123456789");
-
-    //  Large size [24 pixels]
-    //tft.setTextSize(3);
-    //tft.setCursor(0, 72);
-    //tft.setTextColor(0xf800); // Sets text colour to Red
-    //tft.print("-LARGE-");
-
-    //  Extre Large size
-    //tft.setTextSize(4);
-    //tft.setCursor(0, 72);
-    //tft.setTextColor(0x07FF);
-    //tft.print("XTL");
 }
 
 void espInfo() {
