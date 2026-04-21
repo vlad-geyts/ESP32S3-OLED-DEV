@@ -41,6 +41,18 @@ namespace Config {
     constexpr int ScreenHeight = 128;
     
     constexpr int LedPin = WS2812_PIN;
+
+    constexpr int TFT_WHITE = 0xFFFF;
+    constexpr int TFT_BLUE = 0x001F;
+    constexpr int TFT_GREEN = 0x07E0;
+    constexpr int TFT_CYAN = 0x07FF;
+    constexpr int TFT_RED = 0xF800;
+    constexpr int TFT_YELLOW = 0xFFE0;
+    constexpr int TFT_PINK = 0xFE19;
+    constexpr int TFT_ORANGE = 0xFDA0;
+
+
+
 }
 
 // Global Objects
@@ -51,7 +63,7 @@ Adafruit_SSD1351 tft = Adafruit_SSD1351(Config::ScreenWidth, Config::ScreenHeigh
 Adafruit_NeoPixel ws2812(NUM_LEDS, WS2812_PIN, LED_TYPE);
 
 int LineNumber = 0;
-//char MsgBuf[30];        // ! only 21 characters per line can be displayed on OLED
+char MsgBuf[30];        // ! only 21 characters per line can be displayed on OLED
 
 struct DisplayMsg {
     char text[32];
@@ -108,7 +120,7 @@ void setup() {
     // Create Display Task (Priority: 1) on Core 0
     xTaskCreatePinnedToCore(displayTask, "OLED_Task", 4096, NULL, 1, NULL, 0); 
 
-    logStatus("Setup() Completed...", 0x07FF);
+    logStatus("Setup() Completed...", Config::TFT_CYAN);
 }
 
 void loop() {
@@ -121,6 +133,7 @@ void loop() {
 void IRAM_ATTR handleButtonInterrupt() {
 
     static BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
     // Notify the task that the button was pressed
     xSemaphoreGiveFromISR(panicSemaphore, &xHigherPriorityTaskWoken);
     
@@ -137,11 +150,6 @@ void initOLED() {
     SPI.begin(Config::OLED_SCLK, -1, Config::OLED_MOSI, Config::OLED_CS);
     LineNumber = 0;
 
-    //tft.setTextColor(0xffff); // Sets text colour to White
-    //tft.setTextColor(0x07FF); // Sets text clour to Cyan
-    //tft.setTextColor(0x07e1); // Sets text colour to Green
-    //tft.setTextColor(0xffc0); // Sets text colour to Yellow
-    
     // Initialize OLED display
     tft.begin(20000000); // Force SPI clik=20MHz;  20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
@@ -149,7 +157,7 @@ void initOLED() {
     //  Small size 5x7 [6x8] (21 charaters per line)
     //  Medium size 10x14 [12x16] (10 charters per line)
     tft.setCursor(15, LineNumber);
-    tft.setTextColor(0xff40); // Yellow color   
+    tft.setTextColor(Config::TFT_YELLOW); // Yellow color 
     tft.print("S3 MONITOR ACTIVE");    
     LineNumber++;
 }
@@ -192,6 +200,7 @@ void rdPanicCounter() {
     Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
     // convert message to string
     // sprintf(MsgBuf, "FS: %u B", ESP.getFlashChipSize());
+    // Serial.println(MsgBuf);
     // logStatus(MsgBuf, 0x07FF);
     // logStatus("FS: B", 0x07FF);
     // prefs.end();
@@ -217,16 +226,30 @@ void rdPanicCounter() {
 void panicTask(void *pvParameters) {
     for(;;) {
         if (xSemaphoreTake(panicSemaphore, portMAX_DELAY) == pdPASS) {
+            // Here is a breakdown of the statement above:
+            // xSemaphoreTake(...): Attempts to take (decrement) the semaphore. 
+            // If the semaphore is available (count > 0), the task takes it and proceeds.If not, the task blocks
+
+            // portMAX_DELAY: Specifies that if the semaphore is not available, the task should block 
+            // (enter the "Blocked" state) indefinitely until it becomes available.
+
+            // == pdPASS: Checks if the semaphore was successfully obtained
+
             detachInterrupt(digitalPinToInterrupt(Config::BtnPanic));
 
             // --- NVS Logic ---
-            prefs.begin("system", false); // Open "system" namespace in R/W mode
-            uint32_t count = prefs.getUInt("panic_count", 0); // Get existing or default to 0
+            prefs.begin("system", false);                       // Open "system" namespace in R/W mode
+            uint32_t count = prefs.getUInt("panic_count", 0);   // Get existing or default to 0
             count++;
-            prefs.putUInt("panic_count", count); // Save new count to Flash
+            prefs.putUInt("panic_count", count);                // Save new count to Flash
             prefs.end();
 
             Serial.printf("\n[Panic] Event #%u recorded in NVS!\n", count);
+
+            // convert message to string and save it to buffer
+            sprintf(MsgBuf, "Panic Event #%u !", count);
+            // Send message string  from buffer to OLED
+            logStatus(MsgBuf, Config::TFT_ORANGE);
 
             bool ledOn = false;
             // Your strobe feedback logic...
