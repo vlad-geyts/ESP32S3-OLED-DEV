@@ -248,9 +248,9 @@ void panicTask(void *pvParameters) {
             Serial.printf("\n[Panic] Event #%u recorded in NVS!\n", count);
 
             // convert message to string and save it to buffer
-            sprintf(MsgBuf, "Panic Event #%u !", count);
+            sprintf(MsgBuf, "Panic Event #%u !", count);        // Limted to 20 characters per line @ small font
             // Send message string from buffer to OLED display
-            logStatus(MsgBuf, Config::TFT_ORANGE);
+            logStatus(MsgBuf, Config::TFT_WHITE);
 
             bool ledOn = false;
             // Your strobe feedback logic...
@@ -327,19 +327,22 @@ void heartbeatTask(void *pvParameters) {
     ws2812.show();
 
     for (;;) {
+    digitalWrite(Config::StrobPin, HIGH);    
         if (ledOn) {
-            //ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Heartbeat ON (e.g., cyan/blue)
-            ws2812.setPixelColor(0, ws2812.Color(0, 255, 0));  // Heartbeat ON (e.g., green)   
+            // Heartbeat ON
+            ws2812.setPixelColor(0, ws2812.Color(0, 255, 0));   // GREEN is ON   
         } else {
             // Heartbeat OFF
-            ws2812.setPixelColor(0, 0, 0, 0);
+            ws2812.setPixelColor(0, 0, 0, 0);                   // BLACK is OFF
         }
         
         ws2812.show();          // Push data to the LED
         ledOn = !ledOn;         // Toggle state
 
     //    Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis() / 1000);
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    digitalWrite(Config::StrobPin, LOW);  
+        vTaskDelay(pdMS_TO_TICKS(1000));  
     }
+
 }
 
