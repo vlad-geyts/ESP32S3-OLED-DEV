@@ -218,7 +218,6 @@ void panicTask(void *pvParameters) {
     for(;;) {
         if (xSemaphoreTake(panicSemaphore, portMAX_DELAY) == pdPASS) {
             detachInterrupt(digitalPinToInterrupt(Config::BtnPanic));
-            digitalWrite(45, HIGH); // Your PANIC monitor signal
 
             // --- NVS Logic ---
             prefs.begin("system", false); // Open "system" namespace in R/W mode
@@ -235,7 +234,7 @@ void panicTask(void *pvParameters) {
 //                digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
 
             if (ledOn) {
-                ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Panic (Cyan/Blue)
+//                ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Panic (Cyan/Blue)
                 ws2812.setPixelColor(0, ws2812.Color(255, 0, 0));  // Panic (Red)
              } else {
                 // Heartbeat OFF
@@ -248,7 +247,6 @@ void panicTask(void *pvParameters) {
             vTaskDelay(pdMS_TO_TICKS(50));
             }
 
-            digitalWrite(45, LOW);
             vTaskDelay(pdMS_TO_TICKS(100));
             while(xSemaphoreTake(panicSemaphore, 0) == pdPASS); 
             attachInterrupt(digitalPinToInterrupt(Config::BtnPanic), handleButtonInterrupt, FALLING);
