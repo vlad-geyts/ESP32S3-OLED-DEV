@@ -73,7 +73,7 @@ void setup() {
     // Delay to warm up 
     delay(1000);
     Serial.begin(115200);
-    delay(1000);
+    delay(3000);
 
     //Terminate unused GPIOs EARLY (before peripheral init)
     ConfigureUnusedGpios();
@@ -155,7 +155,7 @@ void initOLED() {
 }
 
 void espInfo() {
-    Serial.println("\n--- Connected via CH343 UART (COM?) ---");
+    Serial.println("\n--- Connected via CH343 UART ----------");
     Serial.println(  "--- ESP32-S3 Dual Core Booting --------");
     Serial.println("\n--- ESP Hardware Info------------------");
     
