@@ -244,34 +244,42 @@ void panicTask(void *pvParameters) {
             prefs.putUInt("panic_count", count);                // Save new count to Flash
             prefs.end();
 
+            // Send message to terminal
             Serial.printf("\n[Panic] Event #%u recorded in NVS!\n", count);
 
             // convert message to string and save it to buffer
             sprintf(MsgBuf, "Panic Event #%u !", count);
-            // Send message string  from buffer to OLED
+            // Send message string from buffer to OLED display
             logStatus(MsgBuf, Config::TFT_ORANGE);
 
             bool ledOn = false;
             // Your strobe feedback logic...
             for(int i = 0; i < 20; i++) {
-//                digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
+                // Old code to control onboard BLU LED
+                // digitalWrite(Config::LedPin, !digitalRead(Config::LedPin));
 
-            if (ledOn) {
-//                ws2812.setPixelColor(0, ws2812.Color(0, 150, 255));  // Panic (Cyan/Blue)
-                ws2812.setPixelColor(0, ws2812.Color(255, 0, 0));  // Panic (Red)
-             } else {
-                // Heartbeat OFF
-                ws2812.setPixelColor(0, 0, 0, 0);
-             }
-        
-            ws2812.show();          // Push data to the LED
-            ledOn = !ledOn;         // Toggle state
-
-            vTaskDelay(pdMS_TO_TICKS(50));
+                if (ledOn) {
+                     ws2812.setPixelColor(0, ws2812.Color(255, 0, 0));  // Panic (Red)
+                } else {
+                    // Heartbeat OFF
+                    ws2812.setPixelColor(0, 0, 0, 0);
+                }       
+                ws2812.show();          // Push data to the RGB LED
+                ledOn = !ledOn;         // Toggle state
+                vTaskDelay(pdMS_TO_TICKS(50));
             }
 
             vTaskDelay(pdMS_TO_TICKS(100));
+            // The task enters the Blocked state and resumes after the time elapses. 
+
             while(xSemaphoreTake(panicSemaphore, 0) == pdPASS); 
+            // Here is a breakdown of what the code line above:
+            // xSemaphoreTake(panicSemaphore, 0): This attempts to take (P operation) the semaphore panicSemaphore
+            // 0: This is the block time (ticks). It tells FreeRTOS not to wait if the semaphore is empty, but to return immediately.
+            // pdPASS: The function returns pdPASS if the semaphore was successfully taken, or pdFAIL if it was empty.
+            // while(...): The loop continues taking the semaphore until xSemaphoreTake returns pdFAIL, meaning the semaphore is now empty 
+            // (or pdFAIL is returned because it never had any signals).
+
             attachInterrupt(digitalPinToInterrupt(Config::BtnPanic), handleButtonInterrupt, FALLING);
         }
     }
