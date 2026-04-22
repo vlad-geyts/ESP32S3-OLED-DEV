@@ -100,7 +100,7 @@ void setup() {
     espInfo();
 
     // Reading "Panic Count" on start up
-    rdPanicCounter();
+    //rdPanicCounter();
   
     // Create a Queue for Display only 1 Msg
     displayQueue = xQueueCreate(1, sizeof(DisplayMsg));
@@ -120,7 +120,10 @@ void setup() {
     // Create Display Task (Priority: 1) on Core 0
     xTaskCreatePinnedToCore(displayTask, "OLED_Task", 4096, NULL, 1, NULL, 0); 
 
-    logStatus("Setup() Completed...", Config::TFT_CYAN);
+    //logStatus("Setup() Completed...", Config::TFT_CYAN);
+
+    // Reading "Panic Count" on start up
+    rdPanicCounter();
 }
 
 void loop() {
@@ -197,14 +200,18 @@ void gpioConfig() {
 void rdPanicCounter() {
   // Reading "Panic Count" and send value to terminal
     prefs.begin("system", true); // Open in Read-Only mode
-    Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
-    // convert message to string
-    // sprintf(MsgBuf, "FS: %u B", ESP.getFlashChipSize());
-    // Serial.println(MsgBuf);
-    // logStatus(MsgBuf, 0x07FF);
-    // logStatus("FS: B", 0x07FF);
-    // prefs.end();
+    // Get existing or default to 0
+    uint32_t count = prefs.getUInt("panic_count", 0);   
     prefs.end();
+
+    //Serial.printf("Total Lifetime Panic Events: %u\n", prefs.getUInt("panic_count", 0));
+    //Serial.printf("Total Lifetime Panic Events: %u\n", count);
+
+    // convert message to string and save it to buffer
+    // Limted to 20 characters per line @ small font
+    sprintf(MsgBuf, "..Panic events %u..", count);       
+    // Send message string from buffer to OLED display
+    logStatus(MsgBuf, Config::TFT_CYAN);
 }
 
  void logStatus(const char* info, uint16_t color = 0xFFFF) {
@@ -241,14 +248,21 @@ void panicTask(void *pvParameters) {
             prefs.begin("system", false);                       // Open "system" namespace in R/W mode
             uint32_t count = prefs.getUInt("panic_count", 0);   // Get existing or default to 0
             count++;
-            prefs.putUInt("panic_count", count);                // Save new count to Flash
+
+            // Reset "Panic" counter after 255
+            if (count > 255) {
+                count = 0;
+            }
+
+            // Save new count to Flash
+            prefs.putUInt("panic_count", count);                
             prefs.end();
 
             // Send message to terminal
             Serial.printf("\n[Panic] Event #%u recorded in NVS!\n", count);
 
             // convert message to string and save it to buffer
-            sprintf(MsgBuf, "Panic Event #%u !", count);        // Limted to 20 characters per line @ small font
+            sprintf(MsgBuf, "PANIC EVENT #%u !", count);        // Limted to 20 characters per line @ small font
             // Send message string from buffer to OLED display
             logStatus(MsgBuf, Config::TFT_WHITE);
 
@@ -287,7 +301,7 @@ void panicTask(void *pvParameters) {
 
 void displayTask(void* pvParameters) {
     DisplayMsg msg;
-    while (true) {
+    while (true) {  
         if (xQueueReceive(displayQueue, &msg, portMAX_DELAY) == pdPASS) {
             // xQueueReceive(...): The FreeRTOS API function that attempts to read and remove an item from a queue.
             // displayQueue: The handle to the queue being read.
@@ -295,18 +309,17 @@ void displayTask(void* pvParameters) {
             // portMAX_DELAY: The timeout value. Because this is set, the task will block (enter the Blocked state) and wait forever for data to become available
             // Alternatives: If you want to check the queue and continue without waiting, use a timeout of 0 (polling) instead of portMAX_DELAY
             // == pdPASS: The check to confirm that data was received successfully (it returns pdTRUE/pdPASS if data was received, otherwise errQUEUE_EMPTY if a timeout occurred). 
-            if(LineNumber > 10) { 
+            if(LineNumber > 11) { 
                 tft.fillScreen(0x0000); 
                 LineNumber = 0; 
             }
-            tft.setCursor(0, LineNumber * 12);
+            tft.setCursor(0, LineNumber * 11);
             tft.setTextColor(msg.color);
             tft.println(msg.text);
             LineNumber++;
-
             // Optional: prevent I2C/SPI bus saturation
             vTaskDelay(pdMS_TO_TICKS(5)); 
-        }
+        }    
     }    
 }
 //based on inboard BLU LED connected to GPIO 2
@@ -326,8 +339,7 @@ void heartbeatTask(void *pvParameters) {
     ws2812.setPixelColor(0, 0, 0, 0);
     ws2812.show();
 
-    for (;;) {
-    digitalWrite(Config::StrobPin, HIGH);    
+    for (;;) {   
         if (ledOn) {
             // Heartbeat ON
             ws2812.setPixelColor(0, ws2812.Color(0, 255, 0));   // GREEN is ON   
@@ -339,8 +351,7 @@ void heartbeatTask(void *pvParameters) {
         ws2812.show();          // Push data to the LED
         ledOn = !ledOn;         // Toggle state
 
-    //    Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis() / 1000);
-    digitalWrite(Config::StrobPin, LOW);  
+    //  Serial.printf("[Core 0] Normal Heartbeat... (Uptime: %lu s)\n", millis() / 1000);
         vTaskDelay(pdMS_TO_TICKS(1000));  
     }
 
