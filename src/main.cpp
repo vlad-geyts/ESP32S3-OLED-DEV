@@ -40,19 +40,21 @@ namespace Config {
     constexpr int ScreenWidth  = 128;
     constexpr int ScreenHeight = 128;
     
+     // RGB Led
     constexpr int LedPin = WS2812_PIN;
 
+     // Color definitions
     constexpr int TFT_WHITE = 0xFFFF;
     constexpr int TFT_BLUE = 0x001F;
     constexpr int TFT_GREEN = 0x07E0;
     constexpr int TFT_CYAN = 0x07FF;
+    constexpr int TFT_MAGENTA = 0x07FF;
     constexpr int TFT_RED = 0xF800;
     constexpr int TFT_YELLOW = 0xFFE0;
     constexpr int TFT_PINK = 0xFE19;
     constexpr int TFT_ORANGE = 0xFDA0;
-
-
-
+    constexpr int TFT_BLACK = 0x0000;
+     
 }
 
 // Global Objects
