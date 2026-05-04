@@ -153,15 +153,44 @@ void IRAM_ATTR handleButtonInterrupt() {
 void initOLED() {
     // Initialize SPI with our custom pins
     SPI.begin(Config::OLED_SCLK, -1, Config::OLED_MOSI, Config::OLED_CS);
-    LineNumber = 0;
+    // Reaerve firts 6 lines (0 to 5) for graphics
+    //LineNumber = 0;
+    LineNumber = 6;
+
+    // Display layout
+    // Y from 0 to 63 reserved for graphics
+    // Y from 64 to 127 reserved for terminal. 
+    // 6 lines (11 pix hight) using Small size 5x7. 4 pix separation between lines
 
     // Initialize OLED display
     tft.begin(20000000); // Force SPI clik=20MHz;  20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
+
+    // GFX learning
+    // Draw a pixel
+    // void drawPixel(uint16_t x, uint16_t y, uint16_t color);
+    tft.drawPixel(64, 32, Config::TFT_PINK);
+
+    // Draw line
+    // void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
+    tft.drawLine(0,63,127,0,Config::TFT_GREEN);
+
+    //void drawFastVLine(uint16_t x0, uint16_t y0, uint16_t length, uint16_t color);
+    //void drawFastHLine(uint8_t x0, uint8_t y0, uint8_t length, uint16_t color);
+    // Vertical Line
+    tft.drawFastVLine(0,0,64,Config::TFT_PINK);
+    // Horizontal Line
+    tft.drawFastHLine(0,0,128,Config::TFT_PINK);
+
+    // Draw Rectanular
+    //void drawRect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color);
+    //void fillRect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color);
+    tft.drawRect(4,4,120,56,Config::TFT_YELLOW);
+
     tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
     //  Small size 5x7 [6x8] (21 charaters per line)
     //  Medium size 10x14 [12x16] (10 charters per line)
-    tft.setCursor(15, LineNumber);
+    tft.setCursor(15, LineNumber * 11);
     tft.setTextColor(Config::TFT_YELLOW); // Yellow color 
     tft.print("S3 MONITOR ACTIVE");    
     LineNumber++;
@@ -313,7 +342,9 @@ void displayTask(void* pvParameters) {
             // == pdPASS: The check to confirm that data was received successfully (it returns pdTRUE/pdPASS if data was received, otherwise errQUEUE_EMPTY if a timeout occurred). 
             if(LineNumber > 11) { 
                 tft.fillScreen(0x0000); 
-                LineNumber = 0; 
+                // Reserve first 6 lines (0 to 5) for graphics
+                //LineNumber = 0; 
+                LineNumber = 5; 
             }
             tft.setCursor(0, LineNumber * 11);
             tft.setTextColor(msg.color);
