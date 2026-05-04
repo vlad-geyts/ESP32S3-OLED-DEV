@@ -169,23 +169,24 @@ void initOLED() {
     // GFX learning
     // Draw a pixel
     // void drawPixel(uint16_t x, uint16_t y, uint16_t color);
-    tft.drawPixel(64, 32, Config::TFT_PINK);
+    //tft.drawPixel(64, 32, Config::TFT_PINK);
 
     // Draw line
     // void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t color);
-    tft.drawLine(0,63,127,0,Config::TFT_GREEN);
+    //tft.drawLine(0,63,127,0,Config::TFT_GREEN);
 
     //void drawFastVLine(uint16_t x0, uint16_t y0, uint16_t length, uint16_t color);
     //void drawFastHLine(uint8_t x0, uint8_t y0, uint8_t length, uint16_t color);
     // Vertical Line
-    tft.drawFastVLine(0,0,64,Config::TFT_PINK);
+    //tft.drawFastVLine(0,0,64,Config::TFT_PINK);
     // Horizontal Line
-    tft.drawFastHLine(0,0,128,Config::TFT_PINK);
+    //tft.drawFastHLine(0,0,128,Config::TFT_PINK);
 
     // Draw Rectanular
     //void drawRect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color);
     //void fillRect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color);
-    tft.drawRect(4,4,120,56,Config::TFT_YELLOW);
+    tft.drawRect(0,0,127,63,Config::TFT_GREEN);
+    tft.fillRect(2,2,123,59,Config::TFT_BLUE);
 
     tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
     //  Small size 5x7 [6x8] (21 charaters per line)
