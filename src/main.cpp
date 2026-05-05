@@ -107,9 +107,6 @@ void setup() {
     // Pulling ESP3-S3 HW Information
     espInfo();
 
-    // Floating Math Exercise
-    FloatingMathExercise();
-
     // Reading "Panic Count" on start up
     //rdPanicCounter();
   
@@ -135,6 +132,9 @@ void setup() {
 
     // Reading "Panic Count" on start up
     rdPanicCounter();
+
+    // Floating Math Exercise
+    FloatingMathExercise();
 }
 
 void loop() {
@@ -216,7 +216,13 @@ void FloatingMathExercise() {
     float a = 3.14159f;
     float b = 2.5f;
     float mul_result = a * b;
-    Serial.printf("Multiplication: %.5f * %.1f = %.5f\n", a, b, mul_result);
+    Serial.printf("Multiplication: %.5f * %.1f = %.6f\n", a, b, mul_result);
+
+    // convert message to string and save it to buffer
+    // Limted to 20 characters per line @ small font
+    sprintf(MsgBuf, "3.14159*2.5=%.6f", mul_result);       
+    // Send message string from buffer to OLED display
+    logStatus(MsgBuf, Config::TFT_WHITE);
 
     // ─────────────────────────────────────────────────────
     // 2. DIVISION
@@ -224,7 +230,13 @@ void FloatingMathExercise() {
     float c = 10.0f;
     float d = 3.0f;
     float div_result = c / d;
-    Serial.printf("Division: %.1f / %.1f = %.5f\n", c, d, div_result);
+    Serial.printf("Division: %.1f / %.1f = %.6f\n", c, d, div_result);
+
+    // convert message to string and save it to buffer
+    // Limted to 20 characters per line @ small font
+    sprintf(MsgBuf, "10.0/3.0=%.6f", div_result);       
+    // Send message string from buffer to OLED display
+    logStatus(MsgBuf, Config::TFT_WHITE);
 
     // ─────────────────────────────────────────────────────
     // 3. ROUNDING FLOAT TO INTEGER
