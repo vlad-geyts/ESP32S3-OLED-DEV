@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <math.h>
 #include <Preferences.h> // Include the NVS wrapper
 #include <string>         // C++ Standard String library
 #include <string_view>    // C++17 header for high-performance string handling
@@ -82,6 +83,8 @@ void gpioConfig();
 void rdPanicCounter();
 void displayTask(void* pvParameters);
 void logStatus(const char*, uint16_t);
+void FloatingMathExercise();
+void GFXGraphicsExercise();
 
 void setup() {
     // Delay to warm up 
@@ -97,9 +100,15 @@ void setup() {
 
     //Initialioze OLED on start up
     initOLED();
+    
+    // GFX Graphics exercise
+    GFXGraphicsExercise();
 
     // Pulling ESP3-S3 HW Information
     espInfo();
+
+    // Floating Math Exercise
+    FloatingMathExercise();
 
     // Reading "Panic Count" on start up
     //rdPanicCounter();
@@ -165,8 +174,17 @@ void initOLED() {
     // Initialize OLED display
     tft.begin(20000000); // Force SPI clik=20MHz;  20MHz is max)
     tft.fillScreen(0x0000); // Clear to black
+    tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
+    //  Small size 5x7 [6x8] (21 charaters per line)
+    //  Medium size 10x14 [12x16] (10 charters per line)
+    tft.setCursor(15, LineNumber * 11);
+    tft.setTextColor(Config::TFT_YELLOW); // Yellow color 
+    tft.print("S3 MONITOR ACTIVE");    
+    LineNumber++;
+}
 
-    // GFX learning
+void GFXGraphicsExercise() {
+
     // Draw a pixel
     // void drawPixel(uint16_t x, uint16_t y, uint16_t color);
     //tft.drawPixel(64, 32, Config::TFT_PINK);
@@ -187,15 +205,52 @@ void initOLED() {
     //void fillRect(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint16_t color);
     tft.drawRect(0,0,127,63,Config::TFT_GREEN);
     tft.fillRect(2,2,123,59,Config::TFT_BLUE);
+ }
 
-    tft.setTextSize(1); // 1-Small size; 2-M; 3-Large; 4-XL
-    //  Small size 5x7 [6x8] (21 charaters per line)
-    //  Medium size 10x14 [12x16] (10 charters per line)
-    tft.setCursor(15, LineNumber * 11);
-    tft.setTextColor(Config::TFT_YELLOW); // Yellow color 
-    tft.print("S3 MONITOR ACTIVE");    
-    LineNumber++;
+void FloatingMathExercise() {
+    Serial.println("=== ESP32-S3 Float Math Example ===");
+
+    // ─────────────────────────────────────────────────────
+    // 1. MULTIPLICATION
+    // ─────────────────────────────────────────────────────
+    float a = 3.14159f;
+    float b = 2.5f;
+    float mul_result = a * b;
+    Serial.printf("Multiplication: %.5f * %.1f = %.5f\n", a, b, mul_result);
+
+    // ─────────────────────────────────────────────────────
+    // 2. DIVISION
+    // ─────────────────────────────────────────────────────
+    float c = 10.0f;
+    float d = 3.0f;
+    float div_result = c / d;
+    Serial.printf("Division: %.1f / %.1f = %.5f\n", c, d, div_result);
+
+    // ─────────────────────────────────────────────────────
+    // 3. ROUNDING FLOAT TO INTEGER
+    // ─────────────────────────────────────────────────────
+    float val_pos = 3.78f;
+    float val_neg = -2.3f;
+    float val_half = 2.5f; // halfway case
+
+    // roundf() rounds to nearest integer (halfway cases away from zero)
+    int rounded_pos = (int)roundf(val_pos);
+    int rounded_neg = (int)roundf(val_neg);
+    int rounded_half = (int)roundf(val_half);
+
+    Serial.printf("roundf(%.2f) = %d\n", val_pos, rounded_pos);
+    Serial.printf("roundf(%.1f) = %d\n", val_neg, rounded_neg);
+    Serial.printf("roundf(%.1f) = %d\n", val_half, rounded_half);
+
+    // Alternative: lroundf() returns long (safer for larger values)
+    long l_rounded = lroundf(val_pos);
+    Serial.printf("lroundf(%.2f) = %ld\n", val_pos, l_rounded);
+
+    // Other common rounding functions:
+    Serial.printf("floor(%.2f) = %d\n", val_pos, (int)floorf(val_pos));
+    Serial.printf("ceil(%.2f)  = %d\n", val_pos, (int)ceilf(val_pos));
 }
+
 
 void espInfo() {
     Serial.println("\n--- Connected via CH343 UART ----------");
