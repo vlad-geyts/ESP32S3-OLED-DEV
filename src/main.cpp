@@ -216,11 +216,11 @@ void FloatingMathExercise() {
     float a = 3.14159f;
     float b = 2.5f;
     float mul_result = a * b;
-    Serial.printf("Multiplication: %.5f * %.1f = %.6f\n", a, b, mul_result);
+    Serial.printf("Multiplication: %.5f * %.1f = %.7f\n", a, b, mul_result);
 
     // convert message to string and save it to buffer
     // Limted to 20 characters per line @ small font
-    sprintf(MsgBuf, "3.14159*2.5=%.6f", mul_result);       
+    sprintf(MsgBuf, "3.14159*2.5=%.7f", mul_result);       
     // Send message string from buffer to OLED display
     logStatus(MsgBuf, Config::TFT_WHITE);
 
@@ -230,11 +230,11 @@ void FloatingMathExercise() {
     float c = 10.0f;
     float d = 3.0f;
     float div_result = c / d;
-    Serial.printf("Division: %.1f / %.1f = %.6f\n", c, d, div_result);
+    Serial.printf("Division: %.1f / %.1f = %.7f\n", c, d, div_result);
 
     // convert message to string and save it to buffer
     // Limted to 20 characters per line @ small font
-    sprintf(MsgBuf, "10.0/3.0=%.6f", div_result);       
+    sprintf(MsgBuf, "10.0/3.0=%.7f", div_result);       
     // Send message string from buffer to OLED display
     logStatus(MsgBuf, Config::TFT_WHITE);
 
